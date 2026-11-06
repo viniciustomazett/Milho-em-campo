@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Milho em Campo | Rede de avaliação de cultivares</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+ integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9t/3d9Qw5q4bF7FQY7p1Y=" crossorigin="">
+<style>
+:root{--green:#17452f;--green2:#286b47;--mint:#eaf3eb;--ink:#203329;--muted:#66766c;--line:#e1e9e2;--bg:#f5f8f5;--white:#fff;--gold:#d69b32}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
+header{background:linear-gradient(120deg,#123b29,#286b47);color:white;padding:22px max(20px,calc((100% - 1180px)/2)) 28px}
+.top{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:#ffffff20;display:grid;place-items:center;font-size:24px}
+.brand{font-weight:800;letter-spacing:.08em;font-size:15px}.subbrand{font-size:12px;color:#d2e5d7;margin-top:3px}
+.hero{max-width:1180px;margin:28px auto 0}.hero h1{font-size:clamp(25px,4vw,39px);margin:0 0 9px;line-height:1.1}.hero p{margin:0;color:#dcebe0;max-width:680px;line-height:1.55}
+main{max-width:1180px;margin:22px auto;padding:0 18px 50px}
+.notice{background:#fff7e8;border:1px solid #f1dfba;color:#70521b;padding:11px 14px;border-radius:12px;font-size:13px;line-height:1.5;margin-bottom:17px}
+.nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}.nav button,.btn{border:1px solid var(--line);background:white;color:var(--ink);border-radius:10px;padding:10px 14px;font-weight:650;cursor:pointer}.nav button.active,.btn.primary{background:var(--green);color:white;border-color:var(--green)}button:hover{filter:brightness(.97)}
+.view{display:none}.view.active{display:block}.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:10px 0 15px;flex-wrap:wrap}.section-head h2{font-size:21px;margin:0 0 4px}.section-head p{color:var(--muted);font-size:13px;margin:0}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.stat{background:white;border:1px solid var(--line);border-radius:14px;padding:16px}.stat strong{font-size:27px;display:block;color:var(--green)}.stat span{font-size:12px;color:var(--muted)}
+.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:17px;margin-bottom:16px}.mapgrid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(260px,.85fr);gap:15px}.mapbox{height:520px;border-radius:12px;overflow:hidden;background:#e8eee8}.mapside{min-height:520px}.mapside h3{margin:0 0 5px}.muted{color:var(--muted);font-size:13px;line-height:1.5}.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.details{border-top:1px solid var(--line);margin-top:13px;padding-top:13px}.detailrow{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #edf1ed;font-size:13px}.detailrow span{color:var(--muted)}.tag{display:inline-block;border-radius:99px;padding:4px 9px;background:var(--mint);color:var(--green);font-size:11px;font-weight:700}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}label{font-size:12px;font-weight:700;color:#425449}input,select,textarea{width:100%;border:1px solid #d8e2d9;border-radius:9px;padding:11px 12px;font:inherit;font-size:14px;background:#fff;color:var(--ink)}textarea{min-height:85px;resize:vertical}.hint{font-size:11px;color:var(--muted);line-height:1.4}
+.cultivar{border:1px solid var(--line);border-radius:12px;padding:13px;margin:10px 0;background:#fcfdfc}.cultivarhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.cultivarhead strong{font-size:13px}.remove{border:0;background:#fff0ef;color:#a33b32;border-radius:8px;padding:6px 9px;cursor:pointer}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}.success{display:none;margin-top:13px;background:#e9f5eb;border:1px solid #cce5d0;color:#245c35;border-radius:10px;padding:12px;font-size:13px}
+footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;border-bottom:1px solid var(--line);padding:10px 8px}th{color:var(--muted);font-size:11px;text-transform:uppercase}
+@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.mapgrid{grid-template-columns:1fr}.mapbox{height:390px}.mapside{min-height:0}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top"><div class="logo">🌽</div><div><div class="brand">MILHO EM CAMPO</div><div class="subbrand">Rede nacional de avaliação de cultivares</div></div></div>
+  <div class="hero"><h1>Pesquisa que conecta o campo à ciência.</h1><p>Registro e acompanhamento de experimentos comparativos de cultivares de milho em diferentes regiões do Brasil.</p></div>
+</header>
+<main>
+  <div class="notice"><strong>Versão inicial demonstrativa.</strong> Os pontos e registros são fictícios. Os cadastros feitos aqui ficam apenas neste navegador; ainda não são enviados a um banco de dados nem compartilhados com o pesquisador.</div>
+  <nav class="nav">
+    <button class="active" data-view="mapview">Mapa e experimentos</button>
+    <button data-view="newview">Cadastrar experimento</button>
+    <button data-view="listview">Registros locais</button>
+  </nav>
+  <section id="mapview" class="view active">
+    <div class="stats">
+      <div class="stat"><strong id="stat-exps">6</strong><span>Experimentos demonstrativos</span></div>
+      <div class="stat"><strong id="stat-states">6</strong><span>Estados representados</span></div>
+      <div class="stat"><strong id="stat-cult">3</strong><span>Cultivares no exemplo</span></div>
+      <div class="stat"><strong>Brasil</strong><span>Abrangência da pesquisa</span></div>
+    </div>
+    <div class="section-head"><div><h2>Distribuição geográfica</h2><p>Clique em um marcador para consultar o experimento e seus tratamentos.</p></div><span class="tag">Mapa interativo</span></div>
+    <div class="mapgrid">
+      <div class="panel" style="padding:10px"><div id="map" class="mapbox"></div><div class="legend"><span><i class="dot" style="background:#237b4b"></i>Experimento cadastrado</span><span>© OpenStreetMap</span></div></div>
+      <aside class="panel mapside" id="detail"><h3>Selecione um ponto</h3><p class="muted">As informações do experimento aparecerão aqui.</p></aside>
+    </div>
+  </section>
+  <section id="newview" class="view">
+    <div class="section-head"><div><h2>Novo experimento</h2><p>Um experimento por propriedade; vários cultivares em parcelas separadas.</p></div></div>
+    <form id="experiment-form" class="panel">
+      <h3>1. Identificação e localização</h3>
+      <div class="formgrid">
+        <div class="field"><label for="code">Código do experimento *</label><input id="code" required placeholder="Ex.: MILHO-2026-001"></div>
+        <div class="field"><label for="farmer">Nome do agricultor (não publicar no mapa)</label><input id="farmer" placeholder="Nome do participante"></div>
+        <div class="field"><label for="municipality">Município *</label><input id="municipality" required placeholder="Município"></div>
+        <div class="field"><label for="state">Estado *</label><select id="state" required><option value="">Selecione</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div>
+        <div class="field"><label for="lat">Latitude *</label><input id="lat" required type="number" step="any" placeholder="-17.79"></div>
+        <div class="field"><label for="lon">Longitude *</label><input id="lon" required type="number" step="any" placeholder="-50.92"></div>
+        <div class="field"><label for="planting">Data de plantio *</label><input id="planting" type="date" required></div>
+        <div class="field"><label for="soil">Classe/textura do solo</label><select id="soil"><option value="">Selecione</option><option>Argiloso</option><option>Muito argiloso</option><option>Médio</option><option>Arenoso</option><option>Não informado</option></select></div>
+        <div class="field full"><label for="management">Manejo e condições gerais</label><textarea id="management" placeholder="Preparo do solo, adubação, irrigação, manejo fitossanitário..."></textarea></div>
+      </div>
+      <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+      <h3>2. Cultivares e parcelas</h3>
+      <p class="muted">Cadastre o cultivar fornecido pela pesquisa e todos os cultivares de referência que o agricultor deseja comparar.</p>
+      <div id="cultivars"></div>
+      <button type="button" class="btn" id="add-cultivar">＋ Adicionar cultivar</button>
+      <div class="formgrid" style="margin-top:15px">
+        <div class="field"><label for="blocks">Número de blocos/repetições planejados</label><select id="blocks"><option>1</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select><span class="hint">A quantidade e a randomização devem seguir o protocolo do pesquisador.</span></div>
+        <div class="field"><label for="design">Delineamento</label><select id="design"><option>Blocos casualizados (DBC)</option><option>Outro / a definir pelo pesquisador</option></select></div>
+      </div>
+      <div class="actions"><button class="btn primary" type="submit">Salvar demonstração neste navegador</button><button class="btn" type="reset">Limpar formulário</button></div>
+      <div class="success" id="form-success">Registro salvo neste navegador. Ele aparecerá na lista local e no mapa deste dispositivo. Ainda não foi enviado ao pesquisador.</div>
+    </form>
+  </section>
+  <section id="listview" class="view">
+    <div class="section-head"><div><h2>Registros deste navegador</h2><p>Registros de exemplo e cadastros locais realizados nesta demonstração.</p></div></div>
+    <div class="panel" style="overflow-x:auto"><table><thead><tr><th>Código</th><th>Município/UF</th><th>Cultivares</th><th>Data do plantio</th></tr></thead><tbody id="records"></tbody></table></div>
+    <p class="hint">A limpeza dos dados do navegador pode apagar estes registros. Esta lista não substitui um banco de dados compartilhado.</p>
+  </section>
+</main>
+<footer>Milho em Campo • Protótipo de pesquisa agrícola • Dados de demonstração</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+ integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const demo=[
+ {code:"DEMO-001",city:"Ribeirão Preto",state:"SP",lat:-21.17,lon:-47.81,planting:"2026-10-15",farmer:"Participante demonstrativo 01",cultivars:[{name:"Cultivar experimental X",role:"Cultivar teste"},{name:"Híbrido de referência A",role:"Referência"}],stage:"Desenvolvimento vegetativo"},
+ {code:"DEMO-002",city:"Rio Verde",state:"GO",lat:-17.79,lon:-50.92,planting:"2026-10-12",farmer:"Participante demonstrativo 02",cultivars:[{name:"Cultivar experimental X",role:"Cultivar teste"},{name:"Híbrido de referência B",role:"Referência"},{name:"Híbrido de referência C",role:"Referência"}],stage:"Desenvolvimento vegetativo"},
+ {code:"DEMO-003",city:"Londrina",state:"PR",lat:-23.31,lon:-51.16,planting:"2026-10-20",farmer:"Participante demonstrativo 03",cultivars:[{name:"Cultivar experimental X",role:"Cultivar teste"},{name:"Híbrido de referência A",role:"Referência"}],stage:"Germinação"},
+ {code:"DEMO-004",city:"Sorriso",state:"MT",lat:-12.54,lon:-55.72,planting:"2026-10-08",farmer:"Participante demonstrativo 04",cultivars:[{name:"Cultivar experimental X",role:"Cultivar teste"},{name:"Híbrido de referência D",role:"Referência"}],stage:"Desenvolvimento vegetativo"},
+ {code:"DEMO-005",city:"Barreiras",state:"BA",lat:-12.15,lon:-44.99,planting:"2026-10-24",farmer:"Participante demonstrativo 05",cultivars:[{name:"Cultivar experimental X",role:"Cultivar teste"},{name:"Híbrido de referência E",role:"Referência"}],stage:"Plantio"},
+ {code:"DEMO-006",city:"Uberlândia",state:"MG",lat:-18.91,lon:-48.27,planting:"2026-10-14",farmer:"Participante demonstrativo 06",cultivars:[{name:"Cultivar experimental X",role:"Cultivar teste"},{name:"Híbrido de referência A",role:"Referência"}],stage:"Desenvolvimento vegetativo"}
+];
+let localRecords=[];
+try { localRecords = JSON.parse(localStorage.getItem('milhoEmCampoRegistros') || '[]'); } catch(e) { localRecords=[]; }
+let allRecords=[...demo,...localRecords];
+const map=L.map('map').setView([-14.5,-52],4);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+let markers=[];
+function showDetail(r){
+ const d=document.getElementById('detail');
+ d.innerHTML=`<span class="tag">${r.code}</span><h3 style="margin-top:12px">${r.city} – ${r.state}</h3><p class="muted">${r.farmer||'Participante não informado'}</p>
+ <div class="details"><div class="detailrow"><span>Data do plantio</span><strong>${r.planting||'Não informada'}</strong></div><div class="detailrow"><span>Latitude</span><strong>${r.lat}</strong></div><div class="detailrow"><span>Longitude</span><strong>${r.lon}</strong></div><div class="detailrow"><span>Cultivares</span><strong>${r.cultivars.length}</strong></div></div>
+ <h4>Cultivares avaliados</h4>${r.cultivars.map(c=>`<div class="detailrow"><span>${c.role}</span><strong>${c.name}</strong></div>`).join('')}
+ <p class="muted" style="margin-top:14px">As avaliações de cada parcela serão adicionadas em uma etapa posterior do sistema.</p>`;
+}
+function drawMap(){
+ markers.forEach(m=>map.removeLayer(m));markers=[];
+ allRecords.forEach(r=>{
+  const marker=L.circleMarker([Number(r.lat),Number(r.lon)],{radius:8,color:'#fff',weight:2,fillColor:'#237b4b',fillOpacity:1}).addTo(map);
+  marker.bindTooltip(r.code);marker.on('click',()=>showDetail(r));markers.push(marker);
+ });
+ document.getElementById('stat-exps').textContent=allRecords.length;
+ document.getElementById('stat-states').textContent=new Set(allRecords.map(x=>x.state)).size;
+ document.getElementById('stat-cult').textContent=new Set(allRecords.flatMap(x=>x.cultivars.map(c=>c.name))).size;
+ renderTable();
+}
+function renderTable(){
+ document.getElementById('records').innerHTML=allRecords.map(r=>`<tr><td>${r.code}</td><td>${r.city}/${r.state}</td><td>${r.cultivars.length}</td><td>${r.planting||'—'}</td></tr>`).join('');
+}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+ document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(b.dataset.view).classList.add('active');
+ if(b.dataset.view==='mapview')setTimeout(()=>map.invalidateSize(),100);
+}));
+let cultivarCount=0;
+function addCultivar(name='',role='Referência'){
+ cultivarCount++;const id=cultivarCount;const div=document.createElement('div');div.className='cultivar';div.dataset.id=id;
+ div.innerHTML=`<div class="cultivarhead"><strong>Tratamento / cultivar ${id}</strong><button type="button" class="remove">Remover</button></div><div class="formgrid"><div class="field"><label>Nome do cultivar/híbrido *</label><input class="cname" required placeholder="Nome comercial ou código" value="${name}"></div><div class="field"><label>Categoria</label><select class="crole"><option ${role==='Cultivar teste'?'selected':''}>Cultivar teste</option><option ${role==='Referência'?'selected':''}>Referência</option></select></div></div>`;
+ div.querySelector('.remove').addEventListener('click',()=>div.remove());document.getElementById('cultivars').appendChild(div);
+}
+addCultivar('Cultivar experimental X','Cultivar teste');addCultivar('Híbrido de referência A','Referência');
+document.getElementById('add-cultivar').addEventListener('click',()=>addCultivar());
+document.getElementById('experiment-form').addEventListener('submit',e=>{
+ e.preventDefault();
+ const cultivars=[...document.querySelectorAll('.cultivar')].map(x=>({name:x.querySelector('.cname').value.trim(),role:x.querySelector('.crole').value}));
+ if(!cultivars.length||!cultivars.some(x=>x.role==='Cultivar teste')){alert('Cadastre pelo menos um cultivar e identifique o cultivar teste.');return;}
+ const lat=Number(document.getElementById('lat').value),lon=Number(document.getElementById('lon').value);
+ if(lat < -34 || lat > 6 || lon < -74 || lon > -34){if(!confirm('As coordenadas parecem estar fora do território brasileiro. Deseja continuar?'))return;}
+ const r={code:document.getElementById('code').value.trim(),farmer:document.getElementById('farmer').value.trim(),city:document.getElementById('municipality').value.trim(),state:document.getElementById('state').value,lat,lon,planting:document.getElementById('planting').value,cultivars,stage:'Cadastro inicial'};
+ if(allRecords.some(x=>x.code.toLowerCase()===r.code.toLowerCase())){alert('Já existe um experimento com esse código nesta demonstração.');return;}
+ allRecords.push(r);localRecords.push(r);try { localStorage.setItem('milhoEmCampoRegistros', JSON.stringify(localRecords)); } catch(e) {} drawMap();showDetail(r);
+ document.getElementById('form-success').style.display='block';
+ document.getElementById('experiment-form').reset();document.getElementById('cultivars').innerHTML='';addCultivar('Cultivar experimental X','Cultivar teste');addCultivar('','Referência');
+});
+drawMap();showDetail(demo[0]);
+</script>
+</body>
+</html>
