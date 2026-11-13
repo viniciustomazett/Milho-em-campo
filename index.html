@@ -5,13 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Milho em Campo | Fazenda Escola Lagoa do Sino - UFSCar</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
- integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9t/3d9Qw5q4bF7FQY7p1Y=" crossorigin="">
+ integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--green:#17452f;--green2:#286b47;--mint:#eaf3eb;--ink:#203329;--muted:#66766c;--line:#e1e9e2;--bg:#f5f8f5;--white:#fff;--gold:#d69b32}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
 header{background:linear-gradient(120deg,#123b29,#286b47);color:white;padding:22px max(20px,calc((100% - 1180px)/2)) 28px}
-.top{display:flex;align-items:center;gap:16px}.logo{width:76px;height:76px;border-radius:15px;background:#ffffff20;display:grid;place-items:center;font-size:42px;overflow:hidden}.logo img{width:100%;height:100%;object-fit:contain}
-.brand{font-weight:850;letter-spacing:.02em;font-size:clamp(23px,3.2vw,34px);line-height:1.15}.subbrand{font-size:16px;color:#d2e5d7;margin-top:7px}
+.top{display:flex;align-items:center;gap:16px}.logo{
+    width:176px;
+    height:67px;
+    flex:0 0 176px;
+    border-radius:15px;
+    background:#ffffff20;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+}
+.logo img{
+    width:100%;
+    height:100%;
+    display:block;
+    object-fit:contain;}
+.brand{font-weight:900;letter-spacing:.02em;font-size:clamp(30px,4vw,42px);line-height:1.15;}
 .hero{max-width:1180px;margin:25px auto 0}.hero h1{font-size:clamp(21px,3vw,29px);margin:0 0 9px;line-height:1.2}.hero p{margin:0;color:#dcebe0;max-width:680px;line-height:1.55}
 main{max-width:1180px;margin:22px auto;padding:0 18px 50px}
 .notice{display:none}
@@ -30,20 +46,115 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;b
 </head>
 <body>
 <header>
-  <div class="top"><div class="logo"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmnRBSc6XX_wtOK-1O1FF6AlCHvvWF3IXOsCXzOweZ1w&s=10" alt="Espiga de milho" onerror="this.style.display='none';this.parentElement.textContent='🌽'"></div><div><div class="brand">Milho em Campo</div><div class="subbrand">Fazenda Escola Lagoa do Sino (FELS - UFSCar)</div></div></div>
+  <div class="top"><div class="logo"><img src="fels.svg" alt="Logotipo da Fazenda Escola Lagoa do Sino" onerror="this.style.display='none';this.parentElement.textContent='🌽'"></div><div><div class="brand">Milho em Campo</div></div></div>
   <div class="hero"><p style="font-size:clamp(16px,2vw,19px);font-weight:550">Registro e acompanhamento de experimentos comparativos de cultivares de milho em diferentes regiões do Brasil.</p></div>
 </header>
 <main>
   <nav class="nav">
     <button class="active" data-view="mapview">Página inicial</button>
-    <button data-view="newview">Cadastrar experimento</button>
     <button data-view="listview">Registros locais</button>
-  </nav>
+    <button data-view="newview">Cadastrar experimento</button>
+     <button data-view="myexperimentsview">Meus experimentos</button>
+    <button data-view="authview">Minha conta</button>
+</nav>
+
+<section id="authview" class="view">
+
+    <div class="section-head">
+        <div>
+            <h2>Minha conta</h2>
+            <p>Acesse sua conta ou cadastre-se no Milho em Campo.</p>
+        </div>
+    </div>
+<div id="auth-message" style="
+    display:none;
+    color:#c62828;
+    font-weight:bold;
+    background:#fdecea;
+    border:1px solid #f5c2c0;
+    border-radius:9px;
+    padding:12px 15px;
+    margin:12px 0 18px;"></div>
+
+    <!-- IDENTIFICAÇÃO DO USUÁRIO CONECTADO -->
+    <div class="panel" id="account-panel" style="margin-bottom:20px;">
+        <h3>Minha identificação</h3>
+        <p id="account-status">Verificando sua sessão...</p>
+        <button type="button" id="logout-button" style="display:none;">
+            Sair da conta
+        </button>
+    </div>
+
+    <div class="formgrid">
+
+        <div class="panel">
+            <h3>Criar minha conta</h3>
+
+            <form id="signup-form">
+
+                <div class="field">
+                    <label>Nome completo *</label>
+                    <input id="signup-nome" type="text"
+                        placeholder="Seu nome completo" required>
+                </div>
+
+                <div class="field">
+                    <label>Nome de usuário *</label>
+                    <input id="signup-usuario" type="text"
+                        placeholder="Ex.: AntonioRS" required>
+                </div>
+
+                <div class="field">
+                    <label>E-mail *</label>
+                    <input id="signup-email" type="email"
+                        placeholder="seuemail@email.com" required>
+                </div>
+
+                <div class="field">
+                    <label>Senha *</label>
+                    <input id="signup-senha" type="password"
+                        minlength="8" placeholder="Mínimo de 8 caracteres" required>
+                </div>
+
+                <div class="actions">
+                    <button type="submit">Criar minha conta</button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="panel">
+            <h3>Já tenho uma conta</h3>
+
+            <form id="login-form">
+
+                <div class="field">
+                    <label>E-mail *</label>
+                    <input id="login-email" type="email"
+                        placeholder="seuemail@email.com" required>
+                </div>
+
+                <div class="field">
+                    <label>Senha *</label>
+                    <input id="login-senha" type="password"
+                        placeholder="Sua senha" required>
+                </div>
+
+                <div class="actions">
+                    <button type="submit">Entrar</button>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+
+    
+</section>
   <section id="mapview" class="view active">
     <div class="stats">
       <div class="stat"><strong id="stat-exps">0</strong><span>Experimentos cadastrados</span></div>
-      <div class="stat"><strong id="stat-cult">0</strong><span>Total de cultivares avaliados</span></div>
-    </div>
+          </div>
     <div class="section-head"><div><h2>Distribuição geográfica</h2><p>Localização dos experimentos cadastrados no Brasil.</p></div><span class="tag">Mapa interativo</span></div>
     <div class="mapgrid">
       <div class="panel" style="padding:10px"><div id="map" class="mapbox"></div><div class="legend"><span><i class="dot" style="background:#237b4b"></i>Experimento cadastrado</span><span>© OpenStreetMap</span></div></div>
@@ -59,13 +170,15 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;b
         <div class="field"><label for="state">Estado *</label><select id="state" required><option value="">Selecione</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div>
         <div class="field"><label for="lat">Latitude *</label><input id="lat" required type="number" step="any" placeholder="-17.79"></div>
         <div class="field"><label for="lon">Longitude *</label><input id="lon" required type="number" step="any" placeholder="-50.92"></div>
-        <div class="field"><label for="planting">Data de plantio *</label><input id="planting" type="date" required></div>
-        <div class="field"><label for="soil">Classe/textura do solo</label><select id="soil"><option value="">Selecione</option><option>Argiloso</option><option>Muito argiloso</option><option>Médio</option><option>Arenoso</option><option>Não informado</option></select></div>
-        <div class="field full"><label for="management">Manejo e condições gerais</label><textarea id="management" placeholder="Preparo do solo, adubação, irrigação, manejo fitossanitário..."></textarea></div>
+               
       </div>
       <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
       <h3>2. Cultivares e avaliação</h3>
       <p class="muted">Informe os cultivares e registre os dados de avaliação de cada um deles.</p>
+<div class="field" style="margin:18px 0">
+    <label for="planting">Data de plantio do experimento *</label>
+    <input id="planting" type="date" required>
+</div>
       <div id="cultivars"></div>
       <button type="button" class="btn" id="add-cultivar">＋ Adicionar cultivar</button>
       <div class="actions"><button class="btn primary" type="submit">Salvar Registro</button><button class="btn" type="reset">Limpar Formulário</button></div>
@@ -74,55 +187,1134 @@ table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;b
   </section>
   <section id="listview" class="view">
     <div class="section-head"><div><h2>Registros deste navegador</h2><p>Experimentos cadastrados neste navegador.</p></div></div>
-    <div class="panel" style="overflow-x:auto"><table><thead><tr><th>Identificação</th><th>Município/UF</th><th>Cultivares</th><th>Data do plantio</th></tr></thead><tbody id="records"></tbody></table></div>
+    <div class="panel" style="overflow-x:auto"><table><thead>
+    <tr>
+        <th>Município</th>
+        <th>Cultivares</th>
+        <th>Data do plantio</th>
+    </tr>
+</thead><tbody id="records"></tbody></table></div>
     <p class="hint">A limpeza dos dados do navegador pode apagar estes registros. Os registros ficam armazenados neste navegador e não são compartilhados automaticamente com outros usuários.</p>
   </section>
+<section id="myexperimentsview" class="view">
+    <div class="section-header">
+        <h2>Meus experimentos</h2>
+        <p>Consulte e edite os experimentos cadastrados em sua conta.</p>
+    </div>
+
+    <div id="my-experiments-message"></div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Município</th>
+                    <th>Cultivares</th>
+                    <th>Data de plantio</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="my-experiments-table">
+                <tr>
+                    <td colspan="4">Faça login para visualizar seus experimentos.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section id="editexperimentview" class="view">
+
+    <div class="section-head">
+        <div>
+            <h2>Editar experimento</h2>
+            <p>Altere os dados do experimento selecionado.</p>
+        </div>
+    </div>
+
+    
+    <form id="edit-experiment-form" class="panel">
+
+        <h3>1. Identificação e localização</h3>
+
+        <div class="formgrid">
+
+            <div class="field">
+                <label>Nome do agricultor</label>
+                <input id="edit-farmer">
+            </div>
+
+            <div class="field">
+                <label>Município *</label>
+                <input id="edit-municipality" required>
+            </div>
+
+            <div class="field">
+                <label>Estado *</label>
+                <select id="edit-state" required>
+                    <option value="">Selecione</option>
+                    <option>AC</option><option>AL</option>
+                    <option>AP</option><option>AM</option>
+                    <option>BA</option><option>CE</option>
+                    <option>DF</option><option>ES</option>
+                    <option>GO</option><option>MA</option>
+                    <option>MT</option><option>MS</option>
+                    <option>MG</option><option>PA</option>
+                    <option>PB</option><option>PR</option>
+                    <option>PE</option><option>PI</option>
+                    <option>RJ</option><option>RN</option>
+                    <option>RS</option><option>RO</option>
+                    <option>RR</option><option>SC</option>
+                    <option>SP</option><option>SE</option>
+                    <option>TO</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Latitude *</label>
+                <input id="edit-lat" type="number" step="any" required>
+            </div>
+
+            <div class="field">
+                <label>Longitude *</label>
+                <input id="edit-lon" type="number" step="any" required>
+            </div>
+
+            <div class="field">
+                <label>Data de plantio *</label>
+                <input id="edit-planting" type="date" required>
+            </div>
+
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+
+        <h3>2. Cultivares e avaliações</h3>
+
+        <div id="edit-cultivars"></div>
+
+        <div class="actions">
+            <button type="button" class="btn" id="edit-add-cultivar">
+                ＋ Adicionar cultivar
+            </button>
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn primary">
+                Salvar alterações
+            </button>
+
+            <button type="button" class="btn" id="cancel-edit">
+                Cancelar
+            </button>
+        </div>
+        <div id="edit-experiment-message"
+             style="margin-top: 15px; font-weight: bold;">
+        </div>
+
+    </form>
+
+</section>
 </main>
 <footer>Milho em Campo • Fazenda Escola Lagoa do Sino (FELS - UFSCar)</footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-let localRecords=[];
-try { localRecords = JSON.parse(localStorage.getItem('milhoEmCampoRegistros') || '[]'); } catch(e) { localRecords=[]; }
-let allRecords=[...localRecords];
+// Configuração de conexão com o Supabase
+const SUPABASE_URL = 'https://lcxnwdqvbukbpmttbziq.supabase.co';
+
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_47tMom_UxL4fML54mIfA_g_KTuy2zJd';
+
+const { createClient } = window.supabase;
+
+const supabaseClient = createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+);
+
+console.log('Cliente Supabase inicializado.');
+
+// Código original do site
+let allRecords = [];
 const map=L.map('map').setView([-14.5,-52],4);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: 'Tiles &copy; Esri'
+}).addTo(map);
 let markers=[];
+
 function drawMap(){
- markers.forEach(m=>map.removeLayer(m));markers=[];
- allRecords.forEach(r=>{
-  const marker=L.circleMarker([Number(r.lat),Number(r.lon)],{radius:8,color:'#fff',weight:2,fillColor:'#237b4b',fillOpacity:1}).addTo(map);
-  marker.bindPopup(`<strong>${r.city} - ${r.state}</strong><br>${r.cultivars.length} cultivar(es)<br>Plantio: ${r.planting||'Não informado'}<hr>${r.cultivars.map(c=>`${c.name}: ${c.earWeight?c.earWeight+' g':'avaliação pendente'}`).join('<br>')}`);markers.push(marker);
- });
- document.getElementById('stat-exps').textContent=allRecords.length;
- document.getElementById('stat-cult').textContent=allRecords.reduce((n,r)=>n+r.cultivars.length,0);
- renderTable();
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+
+    allRecords.forEach(r => {
+        if (r.lat == null || r.lon == null) return;
+
+        const marker = L.circleMarker(
+            [Number(r.lat), Number(r.lon)],
+            {
+                radius: 8,
+                color: '#fff',
+                weight: 2,
+                fillColor: '#237b4b',
+                fillOpacity: 1
+            }
+        ).addTo(map);
+
+        marker.bindPopup(`
+    <strong>${r.city} - ${r.state}</strong>
+    <hr>
+    <strong>Cultivares:</strong><br>
+    ${r.cultivars.length > 0
+        ? r.cultivars.map(c => c.name).join('<br>')
+        : 'Nenhuma cultivar cadastrada'
+    }
+`);
+
+        markers.push(marker);
+    });
 }
-function renderTable(){
- document.getElementById('records').innerHTML=allRecords.map(r=>`<tr><td>${r.code}</td><td>${r.city}/${r.state}</td><td>${r.cultivars.length}</td><td>${r.planting||'—'}</td></tr>`).join('') || '<tr><td colspan="4">Nenhum experimento cadastrado.</td></tr>';
-}
-document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>{
- document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
- document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));document.getElementById(b.dataset.view).classList.add('active');
- if(b.dataset.view==='mapview')setTimeout(()=>map.invalidateSize(),100);
+
+
+async function loadExperiments() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('experimentos')        
+.select(`
+    id,
+    cidade,
+    estado,
+    latitude,
+    longitude,
+    data_plantio,
+    cultivares (
+        id,
+        nome_cultivar
+    )
+`);
+
+
+        if (error) throw error;
+
+        allRecords = (data || []).map(experiment => ({
+    code: 'MC-' + experiment.id.substring(0, 8),
+    city: experiment.cidade,
+    state: experiment.estado,
+    lat: experiment.latitude,
+    lon: experiment.longitude,
+    planting: experiment.data_plantio,
+    cultivars: (experiment.cultivares || []).map(cultivar => ({
+        name: cultivar.nome_cultivar
+    }))
 }));
-let cultivarCount=0;
-function addCultivar(name=''){
- cultivarCount++;const id=cultivarCount;const div=document.createElement('div');div.className='cultivar';div.dataset.id=id;
- div.innerHTML=`<div class="cultivarhead"><strong>Cultivar ${id}</strong><button type="button" class="remove">Remover</button></div>
- <div class="formgrid">
-  <div class="field full"><label>Nome do cultivar/híbrido *</label><input class="cname" required placeholder="Nome comercial ou código" value="${name}"></div>
-  <div class="field"><label>Dia da colheita</label><input class="harvest-date" type="date"></div>
-  <div class="field"><label>Diâmetro do colmo (cm)</label><input class="stem-diameter" type="number" min="0" step="any" placeholder="Ex.: 2,5"></div>
-  <div class="field"><label>Diâmetro da espiga (cm)</label><input class="ear-diameter" type="number" min="0" step="any" placeholder="Ex.: 4,8"></div>
-  <div class="field"><label>Peso da espiga (g)</label><input class="ear-weight" type="number" min="0" step="any" placeholder="Ex.: 250"></div>
-  <div class="field full"><label>Foto da espiga com uma régua ao lado</label><input class="ear-photo" type="file" accept="image/*"><span class="hint">Fotografe a espiga inteira com uma régua posicionada ao lado para permitir a comparação do comprimento.</span><img class="photo-preview" alt="Pré-visualização da espiga" style="display:none;max-width:220px;border-radius:9px;margin-top:5px"></div>
- </div>`;
- div.querySelector('.remove').addEventListener('click',()=>div.remove());
- const photoInput=div.querySelector('.ear-photo');
- photoInput.addEventListener('change',()=>{const file=photoInput.files[0];if(!file)return;const preview=div.querySelector('.photo-preview');preview.src=URL.createObjectURL(file);preview.style.display='block';});
- document.getElementById('cultivars').appendChild(div);
+
+        drawMap();
+
+        // Atualizar os indicadores depois de carregar os dados
+        // Atualizar o indicador de experimentos cadastrados
+document.getElementById('stat-exps').textContent = allRecords.length;
+
+        // Atualizar a tabela
+        renderTable();
+
+        console.log('Experimentos carregados:', allRecords.length);
+
+    } catch (error) {
+        console.error('Erro ao carregar experimentos:', error);
+    }
 }
+
+loadExperiments();
+function renderTable(){
+    document.getElementById('records').innerHTML =
+        allRecords.map(r => {
+            const cultivarNames = r.cultivars
+                .map(c => c.name)
+                .filter(Boolean);
+
+            return `
+                <tr>
+                    <td>${r.city}</td>
+                    <td>${cultivarNames.length} (${cultivarNames.join('; ')})</td>
+                    <td>${r.planting || '—'}</td>
+                </tr>
+            `;
+        }).join('') ||
+        '<tr><td colspan="3">Nenhum experimento cadastrado.</td></tr>';
+}
+// ==========================================
+// CARREGAR EXPERIMENTOS DO PRODUTOR CONECTADO
+// ==========================================
+
+async function loadMyExperiments() {
+
+    const table = document.getElementById('my-experiments-table');
+    const message = document.getElementById('my-experiments-message');
+
+    table.innerHTML = '<tr><td colspan="4">Carregando seus experimentos...</td></tr>';
+    message.textContent = '';
+
+    // Verificar usuário conectado
+    const { data: userData, error: userError } =
+        await supabaseClient.auth.getUser();
+
+    if (userError || !userData.user) {
+        table.innerHTML =
+            '<tr><td colspan="4">Faça login para visualizar seus experimentos.</td></tr>';
+        return;
+    }
+
+    // Buscar somente os experimentos deste produtor
+    const { data: experiments, error } = await supabaseClient
+        .from('experimentos')
+        .select(`
+            id,
+            cidade,
+            estado,
+            data_plantio,
+            cultivares (
+                id,
+                nome_cultivar
+            )
+        `)
+        .eq('produtor_id', userData.user.id)
+        .order('data_plantio', { ascending: false });
+
+    if (error) {
+        console.error('Erro ao carregar meus experimentos:', error);
+        table.innerHTML =
+            '<tr><td colspan="4">Não foi possível carregar seus experimentos.</td></tr>';
+        message.textContent = error.message;
+        return;
+    }
+
+    table.innerHTML = '';
+
+    if (!experiments || experiments.length === 0) {
+        table.innerHTML =
+            '<tr><td colspan="4">Você ainda não possui experimentos cadastrados.</td></tr>';
+        return;
+    }
+
+    experiments.forEach(experiment => {
+
+        const row = document.createElement('tr');
+
+        const municipality = document.createElement('td');
+        municipality.textContent =
+            `${experiment.cidade}/${experiment.estado}`;
+
+        const cultivars = document.createElement('td');
+        const cultivarNames = (experiment.cultivares || [])
+            .map(c => c.nome_cultivar);
+
+        cultivars.textContent =
+            cultivarNames.length
+                ? cultivarNames.join(', ')
+                : 'Nenhuma cultivar';
+
+        const planting = document.createElement('td');
+        planting.textContent = experiment.data_plantio || '—';
+
+        const actions = document.createElement('td');
+
+        const editButton = document.createElement('button');
+        editButton.textContent = 'Editar';
+        editButton.type = 'button';
+        editButton.className = 'btn-secondary';
+        editButton.dataset.id = experiment.id;
+
+        actions.appendChild(editButton);
+
+        row.append(municipality, cultivars, planting, actions);
+        table.appendChild(row);
+    });
+}
+
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click', async ()=>{
+
+    // Verificar se o produtor está conectado
+    if (    b.textContent.trim() === 'Cadastrar experimento' ||
+    b.textContent.trim() === 'Meus experimentos') {
+
+        const { data: { session } } = await supabaseClient.auth.getSession();
+
+        // Se não estiver conectado, direcionar para Minha conta
+        if (!session) {
+
+            document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+
+            const accountButton = document.querySelector('.nav button[data-view="authview"]');
+
+            if (accountButton) {
+                accountButton.classList.add('active');
+            }
+
+            document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+
+            document.getElementById('authview').classList.add('active');
+
+            const message = document.getElementById('auth-message');
+
+            if (message) {
+    message.textContent =
+    b.textContent.trim() === 'Meus experimentos'
+        ? 'Para consultar seus experimentos, faça o login ou crie sua conta de produtor.'
+        : 'Para cadastrar experimento, faça o login ou crie sua conta de produtor.';
+    message.style.color = '#c62828';
+    message.style.fontWeight = 'bold';
+    message.style.display = 'block';
+}
+
+            return;
+        }
+    }
+
+    // Navegação normal
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    document.getElementById(b.dataset.view).classList.add('active');
+
+    if(b.dataset.view==='mapview') {
+        setTimeout(()=>map.invalidateSize(),100);
+    }
+if (b.dataset.view === 'myexperimentsview') {
+    loadMyExperiments();
+}
+}));
+
+// ==========================================
+// ABRIR FORMULÁRIO DE EDIÇÃO
+// ==========================================
+
+document.getElementById('my-experiments-table')
+.addEventListener('click', async (event) => {
+
+    const button = event.target.closest('button[data-id]');
+
+    if (!button) return;
+
+    const experimentId = button.dataset.id;
+
+    const message = document.getElementById('edit-experiment-message');
+
+    message.textContent = 'Carregando experimento...';
+
+    const { data: userData, error: userError } =
+        await supabaseClient.auth.getUser();
+
+    if (userError || !userData.user) {
+        message.textContent = 'Faça login para editar seus experimentos.';
+        return;
+    }
+
+    const { data: experiment, error } = await supabaseClient
+        .from('experimentos')
+        .select('id, nome_agricultor, cidade, estado, latitude, longitude, data_plantio')
+        .eq('id', experimentId)
+        .eq('produtor_id', userData.user.id)
+        .single();
+
+    if (error || !experiment) {
+        message.textContent = 'Não foi possível carregar este experimento.';
+        console.error('Erro ao carregar experimento:', error);
+        return;
+    }
+
+    document.getElementById('edit-farmer').value =
+        experiment.nome_agricultor || '';
+
+    document.getElementById('edit-municipality').value =
+        experiment.cidade || '';
+
+    document.getElementById('edit-state').value =
+        experiment.estado || '';
+
+    document.getElementById('edit-lat').value =
+        experiment.latitude ?? '';
+
+    document.getElementById('edit-lon').value =
+        experiment.longitude ?? '';
+
+    document.getElementById('edit-planting').value =
+        experiment.data_plantio || '';
+
+    document.getElementById('edit-experiment-form').dataset.id =
+        experiment.id;
+
+// Buscar as cultivares do experimento
+
+const { data: cultivars, error: cultivarsError } = await supabaseClient
+    .from('cultivares')
+    .select('id, nome_cultivar, data_colheita')
+    .eq('experimento_id', experimentId);
+
+if (cultivarsError) {
+    message.textContent = 'Erro ao carregar as cultivares.';
+    console.error('Erro ao buscar cultivares:', cultivarsError);
+    return;
+}
+// Buscar as avaliações das cultivares
+
+let assessments = [];
+
+if (cultivars.length > 0) {
+
+    const cultivarIds = cultivars.map(cultivar => cultivar.id);
+
+    const { data: assessmentData, error: assessmentsError } =
+        await supabaseClient
+            .from('avaliacoes')
+            .select(`
+                id,
+                cultivar_id,
+                peso_espiga_g,
+                comprimento_espiga_cm,
+                diametro_espiga_cm,
+                diametro_colmo_cm
+            `)
+            .in('cultivar_id', cultivarIds);
+
+    if (assessmentsError) {
+        message.textContent = 'Erro ao carregar as avaliações.';
+        console.error('Erro ao buscar avaliações:', assessmentsError);
+        return;
+    }
+
+    assessments = assessmentData || [];
+}
+// Buscar fotografias das avaliações
+
+let photographs = [];
+
+if (assessments.length > 0) {
+
+    const assessmentIds = assessments.map(
+        assessment => assessment.id
+    );
+
+    const { data: photoData, error: photosError } =
+        await supabaseClient
+            .from('fotografias')
+            .select(`
+                id,
+                avaliacao_id,
+                caminho_arquivo,
+                nome_arquivo,
+                tipo_arquivo
+            `)
+            .in('avaliacao_id', assessmentIds);
+
+    if (photosError) {
+        message.textContent = 'Erro ao carregar as fotografias.';
+        console.error('Erro ao buscar fotografias:', photosError);
+        return;
+    }
+
+    photographs = photoData || [];
+}
+// Exibir as cultivares na tela
+
+const cultivarsContainer = document.getElementById('edit-cultivars');
+
+cultivarsContainer.innerHTML = '';
+
+if (!cultivars || cultivars.length === 0) {
+
+    cultivarsContainer.textContent =
+        'Nenhuma cultivar cadastrada neste experimento.';
+
+} else {
+
+    for (const cultivar of cultivars) {
+
+        const cultivarDiv = document.createElement('div');
+        cultivarDiv.className = 'panel';
+
+        cultivarDiv.dataset.id = cultivar.id;
+
+// Campo: nome da cultivar
+
+const cultivarNameLabel = document.createElement('label');
+cultivarNameLabel.textContent = 'Nome da cultivar';
+
+const cultivarNameInput = document.createElement('input');
+cultivarNameInput.type = 'text';
+cultivarNameInput.value = cultivar.nome_cultivar || '';
+cultivarNameInput.dataset.field = 'nome_cultivar';
+cultivarNameInput.style.width = '100%';
+
+// Campo: data de colheita
+
+const harvestDateLabel = document.createElement('label');
+harvestDateLabel.textContent = 'Data de colheita';
+
+const harvestDateInput = document.createElement('input');
+harvestDateInput.type = 'date';
+harvestDateInput.value = cultivar.data_colheita || '';
+harvestDateInput.dataset.field = 'data_colheita';
+harvestDateInput.style.width = '100%';
+
+cultivarDiv.appendChild(cultivarNameLabel);
+cultivarDiv.appendChild(cultivarNameInput);
+cultivarDiv.appendChild(harvestDateLabel);
+cultivarDiv.appendChild(harvestDateInput);
+
+       
+// Localizar avaliações desta cultivar
+
+const cultivarAssessments = assessments.filter(
+    assessment => assessment.cultivar_id === cultivar.id
+);
+
+if (cultivarAssessments.length === 0) {
+
+    const noAssessment = document.createElement('p');
+    noAssessment.textContent = 'Nenhuma avaliação cadastrada.';
+    cultivarDiv.appendChild(noAssessment);
+
+} else {
+
+    for (const [index, assessment] of cultivarAssessments.entries()) {
+
+        const assessmentDiv = document.createElement('div');
+        assessmentDiv.style.marginTop = '12px';
+        assessmentDiv.style.padding = '12px';
+        assessmentDiv.style.borderTop = '1px solid var(--line)';
+
+        const assessmentTitle = document.createElement('strong');
+        assessmentTitle.textContent = `Avaliação ${index + 1}`;
+
+        // Identificação da avaliação
+
+assessmentDiv.dataset.id = assessment.id;
+
+// Campos numéricos editáveis
+
+const assessmentDetails = document.createElement('div');
+
+const fields = [
+    {
+        label: 'Peso da espiga (g)',
+        field: 'peso_espiga_g',
+        value: assessment.peso_espiga_g
+    },
+    {
+        label: 'Comprimento da espiga (cm)',
+        field: 'comprimento_espiga_cm',
+        value: assessment.comprimento_espiga_cm
+    },
+    {
+        label: 'Diâmetro da espiga (cm)',
+        field: 'diametro_espiga_cm',
+        value: assessment.diametro_espiga_cm
+    },
+    {
+        label: 'Diâmetro do colmo (cm)',
+        field: 'diametro_colmo_cm',
+        value: assessment.diametro_colmo_cm
+    }
+];
+
+fields.forEach(item => {
+
+    const label = document.createElement('label');
+    label.textContent = item.label;
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.step = 'any';
+    input.value = item.value ?? '';
+    input.dataset.field = item.field;
+    input.style.width = '100%';
+
+    assessmentDetails.appendChild(label);
+    assessmentDetails.appendChild(input);
+
+});
+
+        assessmentDiv.appendChild(assessmentTitle);
+assessmentDiv.appendChild(assessmentDetails);
+
+// Buscar fotografias desta avaliação
+
+const assessmentPhotos = photographs.filter(
+    photo => photo.avaliacao_id === assessment.id
+);
+
+for (const photo of assessmentPhotos) {
+    // Guardar os dados da fotografia atual para substituição
+
+    assessmentDiv.dataset.photoId = photo.id;
+    assessmentDiv.dataset.photoPath = photo.caminho_arquivo;
+    assessmentDiv.dataset.photoName = photo.nome_arquivo || '';
+
+    const { data: imageData, error: imageError } =
+        await supabaseClient.storage
+            .from('fotos-experimentos')
+            .createSignedUrl(photo.caminho_arquivo, 3600);
+
+    if (imageError) {
+        console.error('Erro ao gerar link da fotografia:', imageError);
+        continue;
+    }
+
+    const image = document.createElement('img');
+
+    image.src = imageData.signedUrl;
+    image.alt = photo.nome_arquivo || 'Fotografia da espiga';
+
+    image.style.maxWidth = '220px';
+    image.style.height = 'auto';
+    image.style.display = 'block';
+    image.style.marginTop = '10px';
+    image.style.borderRadius = '8px';
+
+    assessmentDiv.appendChild(image);
+}
+
+// Campo para substituir a fotografia
+
+const photoLabel = document.createElement('label');
+photoLabel.textContent = 'Substituir fotografia:';
+photoLabel.style.display = 'block';
+photoLabel.style.marginTop = '12px';
+
+const photoInput = document.createElement('input');
+photoInput.type = 'file';
+photoInput.accept = 'image/*';
+photoInput.dataset.field = 'nova_fotografia';
+photoInput.style.display = 'block';
+photoInput.style.marginTop = '6px';
+
+assessmentDiv.appendChild(photoLabel);
+assessmentDiv.appendChild(photoInput);
+
+cultivarDiv.appendChild(assessmentDiv);
+
+    }
+
+}
+
+cultivarsContainer.appendChild(cultivarDiv);
+
+    }
+
+}
+
+    message.textContent = '';
+
+    document.querySelectorAll('.view').forEach(view => {
+        view.classList.remove('active');
+    });
+
+    document.getElementById('editexperimentview').classList.add('active');
+
+    document.querySelectorAll('.nav button').forEach(button => {
+        button.classList.toggle(
+            'active',
+            button.dataset.view === 'myexperimentsview'
+        );
+    });
+
+});
+
+// ==========================================
+// SALVAR ALTERAÇÕES DO EXPERIMENTO
+// ==========================================
+
+document.getElementById('edit-experiment-form')
+.addEventListener('submit', async (event) => {
+
+    event.preventDefault();
+
+    const form = event.target;
+    const message = document.getElementById('edit-experiment-message');
+    const experimentId = form.dataset.id;
+
+    message.textContent = 'Salvando alterações...';
+
+    try {
+
+        // Verificar usuário conectado
+
+        const { data: userData, error: userError } =
+            await supabaseClient.auth.getUser();
+
+        if (userError || !userData.user) {
+            throw new Error('Faça login para salvar as alterações.');
+        }
+
+        // Converter valores numéricos
+
+        const numberOrNull = value =>
+            value.trim() === '' ? null : Number(value);
+
+        // Atualizar identificação e localização
+
+        const { error: experimentError } = await supabaseClient
+            .from('experimentos')
+            .update({
+                nome_agricultor: document.getElementById('edit-farmer').value,
+                cidade: document.getElementById('edit-municipality').value,
+                estado: document.getElementById('edit-state').value,
+                latitude: numberOrNull(document.getElementById('edit-lat').value),
+                longitude: numberOrNull(document.getElementById('edit-lon').value),
+                data_plantio: document.getElementById('edit-planting').value
+            })
+            .eq('id', experimentId)
+            .eq('produtor_id', userData.user.id);
+
+        if (experimentError) throw experimentError;
+
+        // Atualizar cultivares e avaliações
+
+        const cultivarDivs = document.querySelectorAll(
+            '#edit-cultivars > .panel'
+        );
+
+        for (const cultivarDiv of cultivarDivs) {
+
+            const cultivarId = cultivarDiv.dataset.id;
+
+            const { error: cultivarError } = await supabaseClient
+                .from('cultivares')
+                .update({
+                    nome_cultivar: cultivarDiv.querySelector(
+                        '[data-field="nome_cultivar"]'
+                    ).value,
+                    data_colheita: cultivarDiv.querySelector(
+                        '[data-field="data_colheita"]'
+                    ).value || null
+                })
+                .eq('id', cultivarId);
+
+            if (cultivarError) throw cultivarError;
+
+            // Atualizar avaliações desta cultivar
+
+            const assessmentDivs = cultivarDiv.querySelectorAll('div[data-id]');
+
+            for (const assessmentDiv of assessmentDivs) {
+
+                const getValue = field =>
+                    numberOrNull(
+                        assessmentDiv.querySelector(
+                            `[data-field="${field}"]`
+                        ).value
+                    );
+
+                const { error: assessmentError } = await supabaseClient
+                    .from('avaliacoes')
+                    .update({
+                        peso_espiga_g: getValue('peso_espiga_g'),
+                        comprimento_espiga_cm: getValue('comprimento_espiga_cm'),
+                        diametro_espiga_cm: getValue('diametro_espiga_cm'),
+                        diametro_colmo_cm: getValue('diametro_colmo_cm')
+                    })
+                    .eq('id', assessmentDiv.dataset.id);
+
+                if (assessmentError) throw assessmentError;
+// ==========================================
+// SUBSTITUIR FOTOGRAFIA DA AVALIAÇÃO
+// ==========================================
+
+const photoInput = assessmentDiv.querySelector(
+    '[data-field="nova_fotografia"]'
+);
+
+if (photoInput && photoInput.files.length > 0) {
+
+    const newPhoto = photoInput.files[0];
+
+    // Comprimir nova fotografia
+
+    const compressedData = await compressPhoto(newPhoto);
+
+    const imageBlob = await fetch(compressedData)
+        .then(response => response.blob());
+
+    // Caminho da nova fotografia
+
+    const newFilePath =
+        `${userData.user.id}/${assessmentDiv.dataset.id}/${crypto.randomUUID()}.jpg`;
+
+    // Enviar nova fotografia ao Storage
+
+    const { error: uploadError } = await supabaseClient
+        .storage
+        .from('fotos-experimentos')
+        .upload(newFilePath, imageBlob, {
+            contentType: 'image/jpeg',
+            cacheControl: '3600',
+            upsert: false
+        });
+
+    if (uploadError) throw uploadError;
+
+    // ==========================================
+// ATUALIZAR OU CADASTRAR FOTOGRAFIA
+// ==========================================
+
+const existingPhotoId = assessmentDiv.dataset.photoId;
+const oldFilePath = assessmentDiv.dataset.photoPath;
+
+if (existingPhotoId) {
+
+    // Atualizar registro da fotografia existente
+
+    const { data: updatedPhoto, error: photoUpdateError } =
+        await supabaseClient
+            .from('fotografias')
+            .update({
+                caminho_arquivo: newFilePath,
+                nome_arquivo: newPhoto.name,
+                tipo_arquivo: 'image/jpeg'
+            })
+            .eq('id', existingPhotoId)
+            .eq('avaliacao_id', assessmentDiv.dataset.id)
+            .select('id')
+            .single();
+
+    if (photoUpdateError || !updatedPhoto) {
+
+        await supabaseClient.storage
+            .from('fotos-experimentos')
+            .remove([newFilePath]);
+
+        throw photoUpdateError || new Error(
+            'Não foi possível atualizar o registro da fotografia.'
+        );
+    }
+
+    // Excluir fotografia antiga após confirmar atualização
+
+    if (oldFilePath) {
+
+        const { error: deleteError } = await supabaseClient
+            .storage
+            .from('fotos-experimentos')
+            .remove([oldFilePath]);
+
+        if (deleteError) {
+            console.error(
+                'A nova fotografia foi salva, mas a antiga não foi excluída:',
+                deleteError
+            );
+        }
+    }
+
+} else {
+
+    // Cadastrar fotografia para avaliação sem imagem anterior
+
+    const { error: photoInsertError } = await supabaseClient
+        .from('fotografias')
+        .insert({
+            avaliacao_id: assessmentDiv.dataset.id,
+            caminho_arquivo: newFilePath,
+            nome_arquivo: newPhoto.name,
+            tipo_arquivo: 'image/jpeg'
+        });
+
+    if (photoInsertError) {
+
+        await supabaseClient.storage
+            .from('fotos-experimentos')
+            .remove([newFilePath]);
+
+        throw photoInsertError;
+    }
+}
+            }
+            }
+        }
+
+        message.textContent = 'Alterações salvas com sucesso!';
+
+        await loadMyExperiments();
+
+    } catch (error) {
+
+        console.error('Erro ao salvar alterações:', error);
+
+        message.textContent =
+            'Não foi possível salvar todas as alterações: ' + error.message;
+
+    }
+
+});
+
+// BOTÃO CANCELAR E VOLTAR À LISTA
+
+document.getElementById('cancel-edit').addEventListener('click', () => {
+
+    document.querySelectorAll('.view').forEach(view => {
+        view.classList.remove('active');
+    });
+
+    document.getElementById('myexperimentsview').classList.add('active');
+
+    loadMyExperiments();
+
+});
+
+let cultivarCount = 0;
+
+function addCultivar(name = '') {
+    cultivarCount++;
+
+    const id = cultivarCount;
+    const div = document.createElement('div');
+
+    div.className = 'cultivar';
+    div.dataset.id = id;
+
+    div.innerHTML = `
+        <div class="cultivarhead">
+            <strong>Cultivar ${id}</strong>
+            <button type="button" class="remove">Remover cultivar</button>
+        </div>
+
+        <div class="formgrid">
+
+            <div class="field full">
+                <label>Nome do cultivar/híbrido *</label>
+                <input class="cname" required
+                    placeholder="Nome comercial ou código"
+                    value="${name}">
+            </div>
+
+            <div class="field">
+                <label>Data da colheita</label>
+                <input class="harvest-date" type="date">
+            </div>
+
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+
+        <h4>Avaliações das espigas</h4>
+
+        <div class="assessments"></div>
+
+        <button type="button" class="btn add-assessment">
+            ＋ Adicionar espiga
+        </button>
+    `;
+
+    // Remover cultivar
+    div.querySelector('.remove').addEventListener('click', () => {
+        div.remove();
+    });
+
+    // Adicionar primeira avaliação automaticamente
+    div.querySelector('.add-assessment').addEventListener('click', () => {
+        addAssessment(div);
+    });
+
+    addAssessment(div);
+
+    document.getElementById('cultivars').appendChild(div);
+}
+
+
+// ==========================================
+// ADICIONAR AVALIAÇÃO INDIVIDUAL
+// ==========================================
+
+function addAssessment(cultivarDiv) {
+
+    const container = cultivarDiv.querySelector('.assessments');
+
+    const assessment = document.createElement('div');
+
+    assessment.className = 'assessment panel';
+
+    assessment.innerHTML = `
+        <div class="cultivarhead">
+            <strong>Espiga ${container.children.length + 1}</strong>
+            <button type="button" class="remove-assessment">
+                Remover espiga
+            </button>
+        </div>
+
+        <div class="formgrid">
+
+            <div class="field">
+                <label>Peso da espiga (g)</label>
+                <input class="ear-weight" type="number"
+                    min="0" step="any" placeholder="Ex.: 250">
+            </div>
+
+            <div class="field">
+                <label>Comprimento da espiga (cm)</label>
+                <input class="ear-length" type="number"
+                    min="0" step="any" placeholder="Ex.: 18,5">
+            </div>
+
+            <div class="field">
+                <label>Diâmetro da espiga (cm)</label>
+                <input class="ear-diameter" type="number"
+                    min="0" step="any" placeholder="Ex.: 4,8">
+            </div>
+
+            <div class="field">
+                <label>Diâmetro do colmo (cm)</label>
+                <input class="stem-diameter" type="number"
+                    min="0" step="any" placeholder="Ex.: 2,5">
+            </div>
+
+            <div class="field full">
+                <label>Fotografia da espiga</label>
+                <input class="ear-photo" type="file"
+                    accept="image/jpeg,image/png,image/webp">
+
+                <span class="hint">
+                    Fotografe a espiga inteira com uma régua ao lado.
+                </span>
+
+                <img class="photo-preview"
+                    alt="Pré-visualização da espiga"
+                    style="display:none;max-width:220px;border-radius:9px;margin-top:5px">
+            </div>
+
+        </div>
+    `;
+
+    // Remover avaliação
+    assessment.querySelector('.remove-assessment').addEventListener('click', () => {
+        assessment.remove();
+
+        [...container.children].forEach((item, index) => {
+            item.querySelector('strong').textContent = `Espiga ${index + 1}`;
+        });
+    });
+
+    // Pré-visualização da fotografia
+    const photoInput = assessment.querySelector('.ear-photo');
+
+    photoInput.addEventListener('change', () => {
+
+        const file = photoInput.files[0];
+
+        const preview = assessment.querySelector('.photo-preview');
+
+        if (!file) {
+            preview.style.display = 'none';
+            preview.removeAttribute('src');
+            return;
+        }
+
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+    });
+
+    container.appendChild(assessment);
+}
+
 addCultivar();
 document.getElementById('add-cultivar').addEventListener('click',()=>addCultivar());
 async function compressPhoto(file){
@@ -134,18 +1326,465 @@ async function compressPhoto(file){
  canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
  return canvas.toDataURL('image/jpeg',0.78);
 }
-document.getElementById('experiment-form').addEventListener('submit',async e=>{
- e.preventDefault();
- const cards=[...document.querySelectorAll('.cultivar')];
- if(!cards.length){alert('Cadastre pelo menos um cultivar.');return;}
- const cultivars=await Promise.all(cards.map(async x=>{const file=x.querySelector('.ear-photo').files[0];const photo=await compressPhoto(file);return {name:x.querySelector('.cname').value.trim(),harvestDate:x.querySelector('.harvest-date').value,stemDiameter:x.querySelector('.stem-diameter').value,earDiameter:x.querySelector('.ear-diameter').value,earWeight:x.querySelector('.ear-weight').value,photo};}));
- const lat=Number(document.getElementById('lat').value),lon=Number(document.getElementById('lon').value);
- if(lat < -34 || lat > 6 || lon < -74 || lon > -34){if(!confirm('As coordenadas parecem estar fora do território brasileiro. Deseja continuar?'))return;}
- const r={code:'MC-'+Date.now().toString(36).toUpperCase(),farmer:document.getElementById('farmer').value.trim(),city:document.getElementById('municipality').value.trim(),state:document.getElementById('state').value,lat,lon,planting:document.getElementById('planting').value,cultivars,stage:'Cadastro inicial'};
- allRecords.push(r);localRecords.push(r);let persisted=true;try { localStorage.setItem('milhoEmCampoRegistros', JSON.stringify(localRecords)); } catch(e) { persisted=false; } drawMap();
- document.getElementById('experiment-form').reset();document.getElementById('cultivars').innerHTML='';cultivarCount=0;addCultivar();
- const feedback=document.getElementById('form-success');feedback.textContent=persisted?'Registro salvo neste navegador. Ele aparecerá na lista local e no mapa deste dispositivo.':'Registro adicionado à sessão atual, mas o navegador não conseguiu armazenar os dados. Reduza o tamanho das fotos e tente novamente.';feedback.style.display='block';
+
+document.getElementById('experiment-form').addEventListener('submit', async e => {
+
+    e.preventDefault();
+
+    const form = e.currentTarget;
+    const feedback = document.getElementById('form-success');
+    const saveButton = form.querySelector('button[type="submit"]');
+
+    feedback.style.display = 'block';
+    feedback.style.color = '#237b4b';
+
+    // ==========================================
+    // 1. VERIFICAR AUTENTICAÇÃO
+    // ==========================================
+
+    saveButton.disabled = true;
+    saveButton.textContent = 'Salvando...';
+
+    let experimentId = null;
+    const uploadedPaths = [];
+
+    try {
+
+        const { data: userData, error: userError } =
+            await supabaseClient.auth.getUser();
+
+        if (userError || !userData.user) {
+            throw new Error('Você precisa entrar na sua conta antes de cadastrar um experimento.');
+        }
+
+        const user = userData.user;
+
+        // ==========================================
+        // 2. COLETAR DADOS DO EXPERIMENTO
+        // ==========================================
+
+        const latitude = Number(document.getElementById('lat').value);
+        const longitude = Number(document.getElementById('lon').value);
+
+        if (
+            latitude < -34 || latitude > 6 ||
+            longitude < -74 || longitude > -34
+        ) {
+            if (!confirm('As coordenadas parecem estar fora do território brasileiro. Deseja continuar?')) {
+                return;
+            }
+        }
+
+        const experimentData = {
+            produtor_id: user.id,
+            nome_agricultor: document.getElementById('farmer').value.trim() || null,
+            cidade: document.getElementById('municipality').value.trim(),
+            estado: document.getElementById('state').value,
+            latitude: latitude,
+            longitude: longitude,
+            data_plantio: document.getElementById('planting').value
+        };
+
+        const cultivarCards = [
+            ...document.querySelectorAll('#cultivars .cultivar')
+        ];
+
+        if (!cultivarCards.length) {
+            throw new Error('Cadastre pelo menos uma cultivar.');
+        }
+
+        const cultivarsData = cultivarCards.map(card => {
+
+            const name = card.querySelector('.cname').value.trim();
+
+            if (!name) {
+                throw new Error('Informe o nome de todas as cultivares.');
+            }
+
+            const assessments = [
+                ...card.querySelectorAll('.assessment')
+            ];
+
+            if (!assessments.length) {
+                throw new Error(`A cultivar ${name} precisa ter pelo menos uma avaliação.`);
+            }
+
+            const evaluations = assessments.map((assessment, index) => {
+
+                const weight = assessment.querySelector('.ear-weight').value;
+                const length = assessment.querySelector('.ear-length').value;
+                const earDiameter = assessment.querySelector('.ear-diameter').value;
+                const stemDiameter = assessment.querySelector('.stem-diameter').value;
+                const photo = assessment.querySelector('.ear-photo').files[0];
+
+                if (
+                    !weight && !length && !earDiameter &&
+                    !stemDiameter && !photo
+                ) {
+                    throw new Error(
+                        `Preencha pelo menos uma medida ou selecione uma fotografia na espiga ${index + 1} da cultivar ${name}.`
+                    );
+                }
+
+                return {
+                    peso_espiga_g: weight === '' ? null : Number(weight),
+                    comprimento_espiga_cm: length === '' ? null : Number(length),
+                    diametro_espiga_cm: earDiameter === '' ? null : Number(earDiameter),
+                    diametro_colmo_cm: stemDiameter === '' ? null : Number(stemDiameter),
+                    photo: photo
+                };
+            });
+
+            return {
+                nome_cultivar: name,
+                data_colheita: card.querySelector('.harvest-date').value || null,
+                evaluations: evaluations
+            };
+        });
+
+        // ==========================================
+        // 3. CRIAR EXPERIMENTO
+        // ==========================================
+
+        feedback.textContent = 'Etapa 1/4: salvando experimento...';
+
+        const { data: experiment, error: experimentError } =
+            await supabaseClient
+                .from('experimentos')
+                .insert(experimentData)
+                .select()
+                .single();
+
+        if (experimentError) throw experimentError;
+
+        experimentId = experiment.id;
+
+        // ==========================================
+        // 4. CADASTRAR CULTIVARES E AVALIAÇÕES
+        // ==========================================
+
+        for (const cultivar of cultivarsData) {
+
+            feedback.textContent =
+                `Etapa 2/4: salvando cultivar ${cultivar.nome_cultivar}...`;
+
+            const { data: cultivarRecord, error: cultivarError } =
+                await supabaseClient
+                    .from('cultivares')
+                    .insert({
+                        experimento_id: experimentId,
+                        nome_cultivar: cultivar.nome_cultivar,
+                        data_colheita: cultivar.data_colheita
+                    })
+                    .select()
+                    .single();
+
+            if (cultivarError) throw cultivarError;
+
+            for (const evaluation of cultivar.evaluations) {
+
+                feedback.textContent =
+                    `Etapa 3/4: salvando avaliações de ${cultivar.nome_cultivar}...`;
+
+                const { data: assessmentRecord, error: assessmentError } =
+                    await supabaseClient
+                        .from('avaliacoes')
+                        .insert({
+                            cultivar_id: cultivarRecord.id,
+                            peso_espiga_g: evaluation.peso_espiga_g,
+                            comprimento_espiga_cm: evaluation.comprimento_espiga_cm,
+                            diametro_espiga_cm: evaluation.diametro_espiga_cm,
+                            diametro_colmo_cm: evaluation.diametro_colmo_cm
+                        })
+                        .select()
+                        .single();
+
+                if (assessmentError) throw assessmentError;
+
+                // ==========================================
+                // 5. ENVIAR FOTOGRAFIA AO STORAGE
+                // ==========================================
+
+                if (evaluation.photo) {
+
+                    feedback.textContent =
+                        'Etapa 4/4: enviando fotografias...';
+
+                    const compressedData = await compressPhoto(evaluation.photo);
+
+                    const imageBlob = await fetch(compressedData)
+                        .then(response => response.blob());
+
+                    const filePath =
+                        `${user.id}/${assessmentRecord.id}/${crypto.randomUUID()}.jpg`;
+
+                    const { error: uploadError } = await supabaseClient
+                        .storage
+                        .from('fotos-experimentos')
+                        .upload(filePath, imageBlob, {
+                            contentType: 'image/jpeg',
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (uploadError) throw uploadError;
+
+                    uploadedPaths.push(filePath);
+
+                    // Registrar metadados da fotografia
+
+                    const { error: photoError } = await supabaseClient
+                        .from('fotografias')
+                        .insert({
+                            avaliacao_id: assessmentRecord.id,
+                            caminho_arquivo: filePath,
+                            nome_arquivo: evaluation.photo.name,
+                            tipo_arquivo: 'image/jpeg'
+                        });
+
+                    if (photoError) throw photoError;
+                }
+            }
+        }
+
+        // ==========================================
+        // 6. ATUALIZAR MAPA DA SESSÃO ATUAL
+        // ==========================================
+
+        const record = {
+            code: 'MC-' + experimentId.substring(0, 8),
+            farmer: experimentData.nome_agricultor,
+            city: experimentData.cidade,
+            state: experimentData.estado,
+            lat: latitude,
+            lon: longitude,
+            planting: experimentData.data_plantio,
+            cultivars: cultivarsData,
+            stage: 'Cadastro inicial'
+        };
+
+        allRecords.push(record);
+        drawMap();
+
+        // ==========================================
+        // 7. LIMPAR FORMULÁRIO APÓS SUCESSO
+        // ==========================================
+
+        form.reset();
+
+        document.getElementById('cultivars').innerHTML = '';
+
+        cultivarCount = 0;
+        addCultivar();
+
+        feedback.textContent =
+            'Experimento cadastrado com sucesso no banco de dados!';
+
+        feedback.style.color = '#237b4b';
+        feedback.style.display = 'block';
+
+    } catch (error) {
+
+        console.error('Erro ao salvar experimento:', error);
+
+        // ==========================================
+        // TENTAR LIMPAR DADOS PARCIAIS
+        // ==========================================
+
+        if (uploadedPaths.length > 0) {
+
+            const { error: cleanupStorageError } = await supabaseClient
+                .storage
+                .from('fotos-experimentos')
+                .remove(uploadedPaths);
+
+            if (cleanupStorageError) {
+                console.error('Erro ao limpar fotografias:', cleanupStorageError);
+            }
+        }
+
+        if (experimentId) {
+
+            const { error: cleanupDatabaseError } = await supabaseClient
+                .from('experimentos')
+                .delete()
+                .eq('id', experimentId);
+
+            if (cleanupDatabaseError) {
+                console.error('Erro ao limpar registros parciais:', cleanupDatabaseError);
+            }
+        }
+
+        feedback.textContent =
+            'Não foi possível salvar o experimento: ' + error.message;
+
+        feedback.style.color = '#b42318';
+        feedback.style.display = 'block';
+
+    } finally {
+
+        saveButton.disabled = false;
+        saveButton.textContent = 'Salvar Registro';
+
+    }
+
 });
+
+
+// ==========================================
+// AUTENTICAÇÃO DOS PRODUTORES - SUPABASE
+// ==========================================
+
+const authMessage = document.getElementById('auth-message');
+
+function showAuthMessage(message, isError = false) {
+    authMessage.textContent = message;
+    authMessage.style.display = 'block';
+    authMessage.style.color = isError ? '#b42318' : '#237b4b';
+}
+
+// CADASTRO DE NOVO PRODUTOR
+document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const nomeCompleto = document.getElementById('signup-nome').value.trim();
+    const nomeUsuario = document.getElementById('signup-usuario').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const senha = document.getElementById('signup-senha').value;
+
+    if (!nomeCompleto || !nomeUsuario || !email || !senha) {
+        showAuthMessage('Preencha todos os campos do cadastro.', true);
+        return;
+    }
+
+    showAuthMessage('Enviando cadastro...');
+
+    const { data, error } = await supabaseClient.auth.signUp({
+        email: email,
+        password: senha,
+        options: {
+            data: {
+                nome_completo: nomeCompleto,
+                nome_usuario: nomeUsuario
+            },
+            emailRedirectTo: 'https://viniciustomazett.github.io/Milho-em-campo/'
+        }
+    });
+
+    if (error) {
+        showAuthMessage('Não foi possível realizar o cadastro: ' + error.message, true);
+        return;
+    }
+
+    if (data.session) {
+        showAuthMessage('Cadastro realizado! Você já está conectado.');
+    } else {
+        showAuthMessage('Cadastro realizado! Verifique seu e-mail e clique no link de confirmação para ativar sua conta.');
+    }
+
+    document.getElementById('signup-form').reset();
+});
+
+
+// LOGIN DO PRODUTOR
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('login-email').value.trim();
+    const senha = document.getElementById('login-senha').value;
+
+    showAuthMessage('Verificando seus dados...');
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: senha
+    });
+
+    if (error) {
+        showAuthMessage('Não foi possível entrar: ' + error.message, true);
+        return;
+    }
+
+    showAuthMessage('Bem-vindo! Login realizado com sucesso.');
+
+    document.getElementById('login-form').reset();
+
+    console.log('Usuário autenticado:', data.user.id);
+});
+
+
+
+// ==========================================
+// IDENTIFICAÇÃO DO PRODUTOR CONECTADO
+// ==========================================
+
+const accountStatus = document.getElementById('account-status');
+const logoutButton = document.getElementById('logout-button');
+
+// Consultar o perfil do produtor no banco
+async function updateAccount(user) {
+
+    if (!user) {
+        accountStatus.textContent = 'Você não está conectado. Faça login ou crie sua conta.';
+        logoutButton.style.display = 'none';
+        return;
+    }
+
+    accountStatus.textContent = 'Carregando identificação...';
+    logoutButton.style.display = 'none';
+
+    const { data: perfil, error } = await supabaseClient
+        .from('perfis')
+        .select('nome_usuario, nome_completo')
+        .eq('id', user.id)
+        .single();
+
+    if (error) {
+        console.error('Erro ao consultar perfil:', error);
+        accountStatus.textContent = 'Login realizado, mas não foi possível carregar seu perfil.';
+        logoutButton.style.display = 'inline-block';
+        return;
+    }
+
+    accountStatus.textContent =
+        'Conectado como: ' + perfil.nome_usuario +
+        ' (' + perfil.nome_completo + ')';
+
+    logoutButton.style.display = 'inline-block';
+}
+
+
+// Reconhecer login, logout e sessão já existente
+supabaseClient.auth.onAuthStateChange((event, session) => {
+
+    updateAccount(session ? session.user : null);
+
+    if (event === 'SIGNED_IN') {
+        showAuthMessage('Bem-vindo! Login realizado com sucesso.');
+    }
+
+    if (event === 'SIGNED_OUT') {
+        showAuthMessage('Você saiu da sua conta.');
+    }
+
+});
+
+
+// ENCERRAR SESSÃO
+logoutButton.addEventListener('click', async () => {
+
+    logoutButton.disabled = true;
+
+    const { error } = await supabaseClient.auth.signOut();
+
+    logoutButton.disabled = false;
+
+    if (error) {
+        showAuthMessage('Erro ao sair da conta: ' + error.message, true);
+    }
+
+});
+
 drawMap();
 </script>
 </body>
